@@ -31,25 +31,41 @@ exports.addToWishlist = async (req, res) => {
   exports.getWishlist = async (req, res) => {
     try {
       const userId = req.user._id;
-      const wishlist = await Wishlist.findOne({ user: userId })
-      .populate({
-        path: 'bids',
-        populate: {
-          path: 'user',
-          select: 'username profile' // Specify the fields to return for the user
-        }
-      });
-      if (!wishlist || wishlist.length === 0) {
-        return res.status(200).json({ bids: [],message:"no wishlists" });
+      let wishlist = await Wishlist.findOne({ user: userId })
+        .populate({
+          path: 'bids',
+          options: { sort: { createdAt: -1 } },  // Sort bids by createdAt in descending order
+          populate: {
+            path: 'user',
+            select: 'username profile'
+          }
+        });
+  
+      if (!wishlist) {
+        return res.status(200).json({ bids: [], message: "No wishlists" });
       }
+  
+      // Filter out bids that no longer exist in the database
+      const existingBids = await Bid.find({ _id: { $in: wishlist.bids.map(bid => bid._id) } });
+      const existingBidIds = new Set(existingBids.map(bid => bid._id.toString()));
+  
+      wishlist.bids = wishlist.bids.filter(bid => existingBidIds.has(bid._id.toString()));
+  
+      // Update the wishlist in the database to remove non-existent bids
+      await Wishlist.findByIdAndUpdate(wishlist._id, { bids: wishlist.bids.map(bid => bid._id) });
+  
+      if (wishlist.bids.length === 0) {
+        return res.status(200).json({ bids: [], message: "No wishlists" });
+      }
+  
       res.json(wishlist);
-      
-      
+  
     } catch (error) {
-     
       res.status(500).json({ error: error.message });
     }
   };
+  
+  
   
   exports.removeFromWishlist = async (req, res) => {
     try {

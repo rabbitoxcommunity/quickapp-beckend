@@ -27,14 +27,44 @@ exports.createAdvertise = async (req, res) => {
   };
   
   exports.getAllAdvertise = async (req, res) => {
+    const { page = 1, limit = 10, search = '' } = req.body;
+  
     try {
-        const advertise = await Advertise.find();
-        res.status(200).json(advertise);
+      // Convert page and limit to numbers
+      const pageNumber = parseInt(page, 10);
+      const limitNumber = parseInt(limit, 10);
+  
+      // Define search criteria (adjust fields as needed)
+      const searchCriteria = search
+        ? {
+            $or: [
+              { title: { $regex: search, $options: 'i' } }, // Case-insensitive search for title
+              { description: { $regex: search, $options: 'i' } }, // Case-insensitive search for description
+            ],
+          }
+        : {};
+  
+      // Fetch advertisements with search criteria and pagination
+      const advertise = await Advertise.find(searchCriteria)
+        .skip((pageNumber - 1) * limitNumber)
+        .limit(limitNumber);
+  
+      // Get the total number of advertisements that match the search criteria
+      const totalAdvertise = await Advertise.countDocuments(searchCriteria);
+  
+      // Send advertisements along with pagination and search info
+      res.status(200).json({
+        advertise,
+        totalPages: Math.ceil(totalAdvertise / limitNumber),
+        currentPage: pageNumber,
+        search,
+      });
     } catch (error) {
-        console.error('Error retrieving advertise:', error);
-        res.status(500).json({ error: error.message });
+      console.error('Error retrieving advertise:', error);
+      res.status(500).json({ error: error.message });
     }
-};
+  };
+  
 
 exports.deleteAdvertise = async (req, res) => {
     try {

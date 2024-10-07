@@ -14,6 +14,7 @@ const advertiseRoutes = require('./routes/advertiseRoutes');
 const categoryRequestRoutes = require('./routes/categoryRequestRoutes');
 const feedbackRoutes = require('./routes/feedbackRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
+const dashboardRoutes = require('./routes/dashboardRoutes');
 
 const app = express();
 
@@ -27,6 +28,9 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/uploads', express.static('uploads'));
 
 app.use('/api/auth', authRoutes);
+
+// Dashboard
+app.use('/api/dashboard', dashboardRoutes);
 
 // USER ROUTES
 app.use('/api/users', userRoutes);

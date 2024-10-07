@@ -29,14 +29,44 @@ exports.addFeedback = async (req, res) => {
 };
 
 exports.getAllFeedback = async (req, res) => {
+    const { page = 1, limit = 10, search = '' } = req.body;
+  
     try {
-        const feedbacks = await Feedback.find();
-        res.status(200).json(feedbacks);
+      // Convert page and limit to numbers
+      const pageNumber = parseInt(page, 10);
+      const limitNumber = parseInt(limit, 10);
+  
+      // Define search criteria (you can search by message, username, or other fields)
+      const searchCriteria = search
+        ? {
+            $or: [
+              { message: { $regex: search, $options: 'i' } }, // Case-insensitive search for feedback message
+              { username: { $regex: search, $options: 'i' } }, // Case-insensitive search for username
+            ]
+          }
+        : {};
+  
+      // Fetch feedbacks with search criteria and pagination
+      const feedbacks = await Feedback.find(searchCriteria)
+        .skip((pageNumber - 1) * limitNumber)
+        .limit(limitNumber);
+  
+      // Get the total number of feedbacks that match the search criteria
+      const totalFeedbacks = await Feedback.countDocuments(searchCriteria);
+  
+      // Send feedbacks along with pagination and search info
+      res.status(200).json({
+        feedbacks,
+        totalPages: Math.ceil(totalFeedbacks / limitNumber),
+        currentPage: pageNumber,
+        search,
+      });
     } catch (error) {
-        console.error('Error retrieving feedback:', error);
-        res.status(500).json({ error: error.message });
+      console.error('Error retrieving feedback:', error);
+      res.status(500).json({ error: error.message });
     }
-};
+  };
+  
 
 exports.deleteFeedback = async (req, res) => {
     try {

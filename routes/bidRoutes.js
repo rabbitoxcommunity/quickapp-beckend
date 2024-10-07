@@ -8,7 +8,7 @@ const upload = require('../middleware/upload');
 router.post('/', optionalAuth,  upload.single('image'), bidController.createBid);
 router.post('/allBids', optionalAuth , bidController.getBids);
 router.get('/:id', optionalAuth, bidController.getBidById);
-router.get('/user/:userId', bidController.getUserBids);
+router.get('/user/:userId', auth, bidController.getUserBids);
 router.delete('/user/:bidId',auth, bidController.deleteBid);
 router.post('/search', bidController.searchBids);
 router.patch('/:bidId/inactivate', auth, bidController.inactivateBid);

@@ -89,82 +89,96 @@ exports.activateBid = async (req, res) => {
 exports.getBids = async (req, res) => {
   try {
     const userId = req.user ? req.user._id : null;
-    const userRole = req.user ? req.user.role : null; // Assuming role is stored in the user object
-    const { category, page = 1, limit = 10, search } = req.body; // Defaults for page and limit
+    const userRole = req.user ? req.user.role : null;
+    const { category, page = 1, limit = 10, search } = req.body;
 
-    // Default values for pagination
-    const limitNumber = parseInt(limit, 10) || 10;
-    const skip = (parseInt(page, 10) - 1) * limitNumber;
+    // Ensure limit and page are valid numbers
+    const limitNumber = Math.max(1, parseInt(limit, 10) || 10);
+    const currentPage = Math.max(1, parseInt(page, 10));
+    const skip = (currentPage - 1) * limitNumber;
 
-    // Ensure category is valid
     if (category && category.trim() === '') {
       return res.status(400).json({ message: 'Category is required' });
     }
 
-    // Fetch the user's wishlist if user is logged in
+    // Get user's wishlist
     let wishlist = null;
     if (userId) {
       wishlist = await Wishlist.findOne({ user: userId });
     }
 
-    // Fetch bids with filtering, pagination, search, and isActive check
+    // Build query
     let query = {};
     if (userRole !== 'superadmin') {
-      query.isActive = true; // Only active bids for non-superadmin users
+      query.isActive = true;
     }
     if (category && category !== 'All') {
       query.category = category;
     }
 
-    // Implement search functionality
     if (search) {
-      // Add search to query, adjusting fields as necessary (e.g., title, description)
       query.$or = [
-        { title: { $regex: search, $options: 'i' } }, // Case-insensitive search
+        { title: { $regex: search, $options: 'i' } },
         { description: { $regex: search, $options: 'i' } },
         { location: { $regex: search, $options: 'i' } },
         { category: { $regex: search, $options: 'i' } },
-        // Add more fields as needed
       ];
     }
 
-    // Fetch bids with the current query
+    // Get total count before pagination
+    const totalBids = await Bid.countDocuments(query);
+
+    // Calculate pagination values
+    const pageCount = Math.ceil(totalBids / limitNumber);
+    const hasMore = skip + limitNumber < totalBids;
+
+    // Fetch bids with pagination
     const bids = await Bid.find(query)
       .sort({ createdAt: -1 })
       .skip(skip)
-      .limit(limitNumber);
-
-    // Check if there are more bids available
-    const totalBids = await Bid.countDocuments(query);
-    const hasMore = (skip + limitNumber) < totalBids; // Correct calculation for hasMore
-    const pageCount = limitNumber > 0 ? Math.ceil(totalBids / limitNumber) : 0;
+      .limit(limitNumber)
+      .lean(); // Using lean() for better performance
 
     if (bids.length === 0) {
-      return res.json({ bids: [], hasMore, pageCount });
+      return res.json({ 
+        bids: [], 
+        hasMore,
+        pageCount,
+        totalBids,
+        currentPage,
+        categoryEmpty: category && category !== 'All' ? true : false 
+      });
     }
 
     // Populate user data and wishlist status
     const populatedBids = await Promise.all(bids.map(async (bid) => {
-      const user = await User.findById(bid.user);
+      const user = await User.findById(bid.user).select('username profile').lean();
       const isInWishlist = wishlist ? wishlist.bids.includes(bid._id.toString()) : false;
+      
       return {
-        ...bid.toObject(),
+        ...bid,
         user: user ? {
           username: user.username,
-          profile: user.profile, // Include profile image in the user object
+          profile: user.profile,
         } : null,
-        wishlist: isInWishlist, // Reflect the current wishlist status
+        wishlist: isInWishlist,
       };
     }));
 
-    res.json({ bids: populatedBids, hasMore, pageCount });
+    res.json({ 
+      bids: populatedBids, 
+      hasMore, 
+      pageCount,
+      totalBids,
+      currentPage,
+      categoryEmpty: false 
+    });
 
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error('Error in getBids:', error);
+    res.status(500).json({ error: 'An error occurred while fetching bids' });
   }
 };
-
-
 
 
 
@@ -260,28 +274,43 @@ exports.deleteBid = async (req, res) => {
 // SEARCH BIDS (LOCATION OR TAGS)
 exports.searchBids = async (req, res) => {
   try {
-    const { searchKey } = req.body;
+    const { searchKey, category } = req.body;
 
     let query = {};
 
-    if (searchKey) {
-      // Use regex for partial matching on both location and tags
-      const regex = new RegExp(searchKey, 'i'); // 'i' makes the search case-insensitive
-      query = {
-        $or: [
-          { location: regex },
-          { tags: { $in: [regex] } }
-        ]
-      };
+    if (category && category !== 'All') {
+      query.category = category;
     }
 
-    const bids = await Bid.find(query).sort({ createdAt: -1 }).populate('user', 'username profile');
+    if (searchKey) {
+      const regex = new RegExp(searchKey, 'i'); // Case-insensitive search
+      query.$or = [
+        { location: regex },
+        { tags: { $in: [regex] } },
+        { title: regex },
+        { description: regex }
+      ];
+    }
+
+    const bids = await Bid.find(query)
+      .sort({ createdAt: -1 })
+      .populate('user', 'username profile');
 
     if (bids.length === 0) {
-      return res.json([]);
+      return res.json({
+        bids: [],
+        categoryEmpty: category && category !== 'All' ? true : false,
+        searchEmpty: searchKey ? true : false,
+        categorySearch: true
+      });
     }
 
-    res.json(bids);
+    res.json({
+      bids,
+      categoryEmpty: false,
+      searchEmpty: false,
+      categorySearch: false
+    });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

@@ -1,13 +1,44 @@
 const User = require("../Models/User");
 
 exports.getUsers = async (req, res) => {
+  const { page = 1, limit = 10, search = '' } = req.body;
+
   try {
-    const users = await User.find({}, '-password');
-    res.json(users);
+    // Convert page and limit to numbers
+    const pageNumber = parseInt(page, 10);
+    const limitNumber = parseInt(limit, 10);
+
+    // Define search criteria (you can search by username, email, or any other fields)
+    const searchCriteria = search
+      ? {
+          $or: [
+            { username: { $regex: search, $options: 'i' } }, // case-insensitive search for username
+            { email: { $regex: search, $options: 'i' } }     // case-insensitive search for email
+          ]
+        }
+      : {};
+
+    // Fetch users with search criteria and pagination
+    const users = await User.find(searchCriteria, '-password')
+      .skip((pageNumber - 1) * limitNumber)
+      .limit(limitNumber);
+
+    // Get the total number of users that match the search criteria
+    const totalUsers = await User.countDocuments(searchCriteria);
+
+    // Send users along with pagination and search info
+    res.json({
+      users,
+      totalPages: Math.ceil(totalUsers / limitNumber),
+      currentPage: pageNumber,
+      search,
+    });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 };
+
+
 
 exports.getUserDetails = async (req, res) => {
   try {

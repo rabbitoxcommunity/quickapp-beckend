@@ -4,7 +4,7 @@ const userController = require('../controllers/userController');
 const auth = require('../middleware/auth');
 const roleCheck = require('../middleware/roleCheck');
 
-router.get('/', auth, roleCheck(['superadmin']), userController.getUsers);
+router.post('/', auth, roleCheck(['superadmin']), userController.getUsers);
 router.get('/user', auth, userController.getUserDetails);
 router.patch('/:id/toggle-status', auth, roleCheck(['superadmin']), userController.toggleUserStatus);
 
