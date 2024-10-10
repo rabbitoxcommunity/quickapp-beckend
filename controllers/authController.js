@@ -90,7 +90,7 @@ exports.login = async (req, res) => {
     if (!user.isActive) {
       return res.status(401).json({ message: 'Account is inactive' });
     }
-    const accessToken = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: '6h' });
+    const accessToken = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
     const refreshToken = jwt.sign({ userId: user._id }, process.env.REFRESH_TOKEN_SECRET, { expiresIn: '7d' });
     const userWithoutPassword = user.toObject();
     delete userWithoutPassword.password;
