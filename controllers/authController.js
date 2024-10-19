@@ -8,6 +8,19 @@ exports.register = async (req, res) => {
   try {
     const { username, email, password, location } = req.body;
 
+    console.log('Request body:', req.body);
+
+    // Check if required fields are present
+    if (!username || !email || !password) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ error: 'Invalid email format' });
+    }
+
     // Check if email already exists
     const existingUser = await User.findOne({ email });
     if (existingUser) {

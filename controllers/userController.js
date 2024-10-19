@@ -18,8 +18,9 @@ exports.getUsers = async (req, res) => {
         }
       : {};
 
-    // Fetch users with search criteria and pagination
+    // Fetch users with search criteria, pagination, and sort by createdAt in descending order
     const users = await User.find(searchCriteria, '-password')
+    .sort({ _id: -1 }) // Sort by createdAt in descending order
       .skip((pageNumber - 1) * limitNumber)
       .limit(limitNumber);
 
