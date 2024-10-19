@@ -114,6 +114,19 @@ exports.superLogin = async (req, res) => {
       return res.status(401).json({ message: 'Account is inactive' });
     }
     
+    // Check if the AUTHORIZED_SUPERADMINS environment variable is set
+    const authorizedSuperadmins = process.env.AUTHORIZED_SUPERADMINS;
+    if (!authorizedSuperadmins) {
+      console.error('AUTHORIZED_SUPERADMINS environment variable is not set');
+      return res.status(500).json({ message: 'Server configuration error' });
+    }
+
+    // Check if the user is in the list of authorized superadmins
+    const authorizedEmails = authorizedSuperadmins.split(',').map(email => email.trim());
+    if (!authorizedEmails.includes(user.email)) {
+      return res.status(403).json({ message: 'Access denied. You are not authorized as a superadmin.' });
+    }
+    
     if (user.role !== 'superadmin') {
       return res.status(403).json({ message: 'Access denied. Only superadmins can log in.' });
     }
@@ -126,6 +139,7 @@ exports.superLogin = async (req, res) => {
     
     res.json({ accessToken, refreshToken, user: userWithoutPassword });
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    console.error('Error in superLogin:', error);
+    res.status(500).json({ message: 'An unexpected error occurred' });
   }
 };

@@ -6,6 +6,7 @@ const roleCheck = require('../middleware/roleCheck');
 
 router.post('/', auth, roleCheck(['superadmin']), userController.getUsers);
 router.get('/user', auth, userController.getUserDetails);
+router.delete('/delete-user/:id', auth, userController.deleteUser);
 router.patch('/:id/toggle-status', auth, roleCheck(['superadmin']), userController.toggleUserStatus);
 
 module.exports = router;
