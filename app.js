@@ -8,8 +8,10 @@ const userRoutes = require('./routes/userRoutes');
 const bidRoutes = require('./routes/bidRoutes');
 const wishlistRoutes = require('./routes/wishlistRoutes');
 const categoryRoutes = require('./routes/categoryRoutes');
+const priceRoutes = require('./routes/priceRoutes');
 const adsRoutes = require('./routes/adsRoutes');
 const termsRoutes = require('./routes/termsRoutes');
+const privacyRoutes = require('./routes/privacyRoutes');
 const advertiseRoutes = require('./routes/advertiseRoutes');
 const categoryRequestRoutes = require('./routes/categoryRequestRoutes');
 const feedbackRoutes = require('./routes/feedbackRoutes');
@@ -47,8 +49,14 @@ app.use('/api/adBanners', adsRoutes);
 // CATEGORY
 app.use('/api/categories', categoryRoutes);
 
+// PRICE FOR
+app.use('/api/price-for', priceRoutes);
+
 // TERMS AND CONDITIONS
 app.use('/api/terms', termsRoutes);
+
+// Privacy Policy
+app.use('/api/privacy', privacyRoutes);
 
 // ADVERTISE REQUEST
 app.use('/api/advertise', advertiseRoutes);

@@ -6,6 +6,7 @@ const auth = require('../middleware/auth');
 
 
 router.post('/register', upload.single('profile'), authController.register);
+router.put('/edit-profile', upload.single('profile'), authController.editProfile);
 router.post('/login', authController.login);
 router.post('/superlogin', authController.superLogin);
 router.post('/verifyRefresh',auth, authController.verifyRefresh);

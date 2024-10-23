@@ -52,6 +52,42 @@ exports.register = async (req, res) => {
 };
 
 
+exports.editProfile = async (req, res) => {
+  try {
+    const { userId, username,location } = req.body; 
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Update username if provided
+    if (username) {
+      user.username = username;
+    }
+    if (location) {
+      user.location = location;
+    }
+
+    
+
+    if (req.file) {
+      user.profile = req.file ? req.file.path : null;
+    }
+
+    await user.save();
+
+    const userResponse = user.toObject();
+    delete userResponse.password;
+
+    res.json({ message: 'Profile updated successfully', user: userResponse });
+  } catch (error) {
+    console.error('Profile update error:', error);
+    res.status(400).json({ error: 'Profile update failed. Please try again.' });
+  }
+};
+
+
 exports.verifyRefresh = async (req, res) => {
   try {
     const { refreshToken } = req.body;
@@ -95,7 +131,10 @@ exports.verifyRefresh = async (req, res) => {
 
 exports.login = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    let { email, password } = req.body;
+    
+    email = email.toLowerCase();
+
     const user = await User.findOne({ email });
     if (!user || !(await user.comparePassword(password))) {
       return res.status(401).json({ message: 'Invalid credentials' });
@@ -103,15 +142,19 @@ exports.login = async (req, res) => {
     if (!user.isActive) {
       return res.status(401).json({ message: 'Account is inactive' });
     }
+
     const accessToken = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
     const refreshToken = jwt.sign({ userId: user._id }, process.env.REFRESH_TOKEN_SECRET, { expiresIn: '7d' });
+
     const userWithoutPassword = user.toObject();
     delete userWithoutPassword.password;
+
     res.json({ accessToken, refreshToken, user: userWithoutPassword });
   } catch (error) {
     res.status(400).json({ error: error.message });
   }
 };
+
 
 
 exports.superLogin = async (req, res) => {
