@@ -226,7 +226,7 @@ exports.getUserBids = async (req, res) => {
     const userId = req.params.userId;
     
     // Find bids and populate the user field
-    const bids = await Bid.find({ user: userId }).populate('user', 'username profile');
+    const bids = await Bid.find({ user: userId }).populate('user', 'username profile').sort({ createdAt: -1 });
     console.log(userId)
 
     // If no bids are found, return an empty array with a message
@@ -309,7 +309,8 @@ exports.searchBids = async (req, res) => {
       bids,
       categoryEmpty: false,
       searchEmpty: false,
-      categorySearch: false
+      categorySearch: false,
+      hasMore: false, //mannuly entered
     });
   } catch (error) {
     res.status(500).json({ error: error.message });

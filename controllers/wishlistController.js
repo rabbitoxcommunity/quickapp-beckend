@@ -34,7 +34,7 @@ exports.addToWishlist = async (req, res) => {
       let wishlist = await Wishlist.findOne({ user: userId })
         .populate({
           path: 'bids',
-          options: { sort: { createdAt: -1 } },  // Sort bids by createdAt in descending order
+          options: { sort: { createdAt: -1 } },  
           populate: {
             path: 'user',
             select: 'username profile'
