@@ -1,8 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const categoryRequestController = require('../controllers/categoryRequestController');
-const { isAdmin } = require('../middleware/isAdmin');
 
-router.post('/create-category', isAdmin, categoryRequestController.createNewCategory);
+router.post('/create-category', categoryRequestController.createNewCategory);
+router.post('/get-requestedCategory', categoryRequestController.getAllCategory);
+router.delete('/delete-requestedCategory/:id', categoryRequestController.deleteCategory);
+
 
 module.exports = router;

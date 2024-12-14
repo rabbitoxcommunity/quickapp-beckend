@@ -1,9 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const privacyController = require('../controllers/privacyController');
-const { isAdmin } = require('../middleware/isAdmin');
+const auth = require('../middleware/auth');
 
-router.post('/add-privacy',isAdmin, privacyController.addOrUpdatePrivacy);
-router.get('/get-privacy',isAdmin, privacyController.getPrivacy);
+router.post('/add-privacy',auth, privacyController.addOrUpdatePrivacy);
+router.get('/get-privacy', privacyController.getPrivacy);
 
 module.exports = router;
