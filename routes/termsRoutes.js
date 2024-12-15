@@ -1,9 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const termsController = require('../controllers/termsController');
-const { isAdmin } = require('../middleware/isAdmin');
+const auth = require('../middleware/auth');
 
-router.post('/add-terms',isAdmin, termsController.addOrUpdateTerms);
+router.post('/add-terms',auth, termsController.addOrUpdateTerms);
 router.get('/get-terms', termsController.getTerms);
 
 module.exports = router;

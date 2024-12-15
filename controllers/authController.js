@@ -199,3 +199,41 @@ exports.superLogin = async (req, res) => {
     res.status(500).json({ message: 'An unexpected error occurred' });
   }
 };
+
+exports.deleteAccount = async (req, res) => {
+  try {
+    // Extract user ID from request
+    const userId = req.user.id;
+
+    console.log(`Deleting account for user ID: ${userId}`);
+
+    // Attempt to find and delete the user
+    const user = await User.findByIdAndDelete(userId);
+
+    // Check if the user exists
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Optional: Handle logout or token invalidation
+    // Example for JWT: Add user ID to a token blacklist if implemented
+
+    // Send success response
+    res.status(200).json({
+      message: 'Account deleted successfully',
+      deletedUser: {
+        id: user._id,
+        email: user.email,
+        username: user.username,
+      },
+    });
+  } catch (error) {
+    console.error('Error during account deletion:', error);
+
+    // Send failure response with error details
+    res.status(500).json({
+      error: 'Failed to delete account',
+      details: error.message,
+    });
+  }
+};
