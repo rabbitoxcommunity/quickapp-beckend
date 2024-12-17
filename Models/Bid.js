@@ -8,7 +8,7 @@ const BidSchema = new mongoose.Schema({
   title: { type: String, required: true },
   tags: [{ type: String }],
   isActive: { type: Boolean, default: true },
-  bidAmount: { type: Number },
+  bidAmount: { type: String },
   amountTitle: { type: String },
   contactNumber: { type: String, required: true },
   isWhatsapp: { type: Boolean, default: false },

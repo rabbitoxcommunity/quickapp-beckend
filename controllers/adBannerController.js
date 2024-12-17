@@ -41,39 +41,33 @@ exports.createBanner = async (req, res) => {
 
 exports.getAllBanners = async (req, res) => {
   try {
-
+    // Fetch all banners sorted by createdAt descending
     const banners = await AdBanner.find().sort({ createdAt: -1 });
 
-
+    // Add `expiry` key to each banner
     const bannersWithExpiry = banners.map(banner => {
-      const dateFrom = new Date(banner.dateFrom);
       const dateTo = new Date(banner.dateTo);
-
-
-      const isExpired = new Date() > dateTo;
-
-
+      const isExpired = new Date() > dateTo; // Check if banner is expired
+      console.log(isExpired,'isExpired')
       return {
-        ...banner.toObject(),
-        expiry: isExpired
+        ...banner.toObject(), // Convert to plain object
+        expiry: isExpired // Add expiry status
       };
     });
 
-
-    const nonExpiredBanners = bannersWithExpiry.filter(banner => !banner.expiry);
-
-
-    const sortedBanners = nonExpiredBanners.sort((a, b) => {
+    // Sort banners by position first, and then keep all banners regardless of expiry
+    const sortedBanners = bannersWithExpiry.sort((a, b) => {
       return (a.position || Infinity) - (b.position || Infinity);
     });
 
-
+    // Respond with all banners including expired ones
     res.json(sortedBanners);
   } catch (error) {
-
+    console.error('Error fetching banners:', error);
     res.status(500).json({ error: error.message });
   }
 };
+
 
 
 
