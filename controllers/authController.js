@@ -91,6 +91,7 @@ exports.editProfile = async (req, res) => {
 exports.verifyRefresh = async (req, res) => {
   try {
     const { refreshToken } = req.body;
+    console.log(refreshToken)
 
     if (!refreshToken) {
       return res.status(400).json({ message: 'Refresh token is required' });
@@ -111,7 +112,7 @@ exports.verifyRefresh = async (req, res) => {
     }
 
     // Generate new access token
-    const newAccessToken = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+    const newAccessToken = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: '7h' });
 
     res.json({ 
       accessToken: newAccessToken,
@@ -143,7 +144,7 @@ exports.login = async (req, res) => {
       return res.status(401).json({ message: 'Account is inactive' });
     }
 
-    const accessToken = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+    const accessToken = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: '7h' });
     const refreshToken = jwt.sign({ userId: user._id }, process.env.REFRESH_TOKEN_SECRET, { expiresIn: '7d' });
 
     const userWithoutPassword = user.toObject();
@@ -187,7 +188,7 @@ exports.superLogin = async (req, res) => {
       return res.status(403).json({ message: 'Access denied. Only superadmins can log in.' });
     }
     
-    const accessToken = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: '6h' });
+    const accessToken = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: '7h' });
     const refreshToken = jwt.sign({ userId: user._id }, process.env.REFRESH_TOKEN_SECRET, { expiresIn: '7d' });
     
     const userWithoutPassword = user.toObject();
