@@ -7,6 +7,7 @@ const BidSchema = new mongoose.Schema({
   category: { type: String, required: true },
   title: { type: String, required: true },
   tags: [{ type: String }],
+  viewCount: { type: Number, default: 0 },
   isActive: { type: Boolean, default: true },
   bidAmount: { type: String },
   amountTitle: { type: String },

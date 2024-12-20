@@ -86,6 +86,101 @@ exports.activateBid = async (req, res) => {
   }
 };
 
+// exports.getBids = async (req, res) => {
+//   try {
+//     const userId = req.user ? req.user._id : null;
+//     const userRole = req.user ? req.user.role : null;
+//     const { category, page = 1, limit = 10, search } = req.body;
+
+//     // Ensure limit and page are valid numbers
+//     const limitNumber = Math.max(1, parseInt(limit, 10) || 10);
+//     const currentPage = Math.max(1, parseInt(page, 10));
+//     const skip = (currentPage - 1) * limitNumber;
+
+//     if (category && category.trim() === '') {
+//       return res.status(400).json({ message: 'Category is required' });
+//     }
+
+//     // Get user's wishlist
+//     let wishlist = null;
+//     if (userId) {
+//       wishlist = await Wishlist.findOne({ user: userId });
+//     }
+
+//     // Build query
+//     let query = {};
+//     if (userRole !== 'superadmin') {
+//       query.isActive = true;
+//     }
+//     if (category && category !== 'All') {
+//       query.category = category;
+//     }
+
+//     if (search) {
+//       query.$or = [
+//         { title: { $regex: search, $options: 'i' } },
+//         { description: { $regex: search, $options: 'i' } },
+//         { location: { $regex: search, $options: 'i' } },
+//         { category: { $regex: search, $options: 'i' } },
+//       ];
+//     }
+
+//     // Get total count before pagination
+//     const totalBids = await Bid.countDocuments(query);
+
+//     // Calculate pagination values
+//     const pageCount = Math.ceil(totalBids / limitNumber);
+//     const hasMore = skip + limitNumber < totalBids;
+
+//     // Fetch bids with pagination
+//     const bids = await Bid.find(query)
+//       .sort({ createdAt: -1 })
+//       .skip(skip)
+//       .limit(limitNumber)
+//       .lean(); 
+
+//     if (bids.length === 0) {
+//       return res.json({ 
+//         bids: [], 
+//         hasMore,
+//         pageCount,
+//         totalBids,
+//         currentPage,
+//         categoryEmpty: category && category !== 'All' ? true : false 
+//       });
+//     }
+
+//     // Populate user data and wishlist status
+//     const populatedBids = await Promise.all(bids.map(async (bid) => {
+//       const user = await User.findById(bid.user).select('username profile').lean();
+//       const isInWishlist = wishlist ? wishlist.bids.includes(bid._id.toString()) : false;
+      
+//       return {
+//         ...bid,
+//         user: user ? {
+//           username: user.username,
+//           profile: user.profile,
+//         } : null,
+//         wishlist: isInWishlist,
+//       };
+//     }));
+
+//     res.json({ 
+//       bids: populatedBids, 
+//       hasMore, 
+//       pageCount,
+//       totalBids,
+//       currentPage,
+//       categoryEmpty: false 
+//     });
+
+//   } catch (error) {
+//     console.error('Error in getBids:', error);
+//     res.status(500).json({ error: 'An error occurred while fetching bids' });
+//   }
+// };
+
+
 exports.getBids = async (req, res) => {
   try {
     const userId = req.user ? req.user._id : null;
@@ -132,8 +227,9 @@ exports.getBids = async (req, res) => {
     const pageCount = Math.ceil(totalBids / limitNumber);
     const hasMore = skip + limitNumber < totalBids;
 
-    // Fetch bids with pagination
+    // Fetch bids with pagination, including viewCount field
     const bids = await Bid.find(query)
+      .select('title description location category createdAt user viewCount isActive image bidAmount amountTitle contactNumber isWhatsapp tags')
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limitNumber)
@@ -162,6 +258,7 @@ exports.getBids = async (req, res) => {
           profile: user.profile,
         } : null,
         wishlist: isInWishlist,
+        viewCount: bid.viewCount || 0
       };
     }));
 
@@ -182,9 +279,6 @@ exports.getBids = async (req, res) => {
 
 
 
-
-
-
 exports.getBidById = async (req, res) => {
   try {
     // Find the bid by ID and populate user details
@@ -195,8 +289,13 @@ exports.getBidById = async (req, res) => {
       return res.status(404).json({ message: 'Bid not found', data: [] });
     }
 
+    // Increment view count immediately using findByIdAndUpdate
+    // This is more efficient than loading, modifying, and saving
+    await Bid.findByIdAndUpdate(req.params.id, {
+      $inc: { viewCount: 1 }
+    });
+
     // Check if the user is logged in
-    console.log(req.user,'::::')
     const userId = req.user ? req.user._id : null;
     let wishlist = null;
 
@@ -208,8 +307,12 @@ exports.getBidById = async (req, res) => {
     // Check if the bid is in the user's wishlist
     const isInWishlist = wishlist ? wishlist.bids.includes(bid._id.toString()) : false;
 
-    // Send the response with bid details and wishlist status
-    res.json({ ...bid.toObject(), isInWishlist });
+    // Send the response with bid details, wishlist status, and view count
+    res.json({ 
+      ...bid.toObject(), 
+      isInWishlist,
+      viewCount: (bid.viewCount || 0) + 1  // Add 1 to include the current view
+    });
   } catch (error) {
     // Return a 500 response with the error message if an exception occurs
     res.status(500).json({ error: error.message });
