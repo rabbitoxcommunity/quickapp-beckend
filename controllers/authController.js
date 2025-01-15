@@ -8,7 +8,7 @@ exports.register = async (req, res) => {
   try {
     const { username, email, password, location } = req.body;
 
-    console.log('Request body:', req.body);
+    console.log('Request body FILE:', req.file);
 
     // Check if required fields are present
     if (!username || !email || !password) {

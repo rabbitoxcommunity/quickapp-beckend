@@ -15,6 +15,7 @@ const privacyRoutes = require('./routes/privacyRoutes');
 const advertiseRoutes = require('./routes/advertiseRoutes');
 const categoryRequestRoutes = require('./routes/categoryRequestRoutes');
 const feedbackRoutes = require('./routes/feedbackRoutes');
+const versionRoutes = require('./routes/versionRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
 const dashboardRoutes = require('./routes/dashboardRoutes');
 
@@ -66,6 +67,9 @@ app.use('/api/request', categoryRequestRoutes);
 
 // FEEDBACK
 app.use('/api/feedback', feedbackRoutes);
+
+// VERSION
+app.use('/api/version', versionRoutes);
 
 // NOTIFICATIONS
 app.use('/api/notification', notificationRoutes);
